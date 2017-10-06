@@ -131,7 +131,7 @@ exports.default = Parchment;
 /***/ (function(module, exports, __webpack_require__) {
 
 var diff = __webpack_require__(54);
-var equal = __webpack_require__(11);
+var equal = __webpack_require__(10);
 var extend = __webpack_require__(3);
 var op = __webpack_require__(19);
 
@@ -727,7 +727,7 @@ var _inline = __webpack_require__(6);
 
 var _inline2 = _interopRequireDefault(_inline);
 
-var _text = __webpack_require__(7);
+var _text = __webpack_require__(11);
 
 var _text2 = _interopRequireDefault(_text);
 
@@ -977,11 +977,11 @@ var _editor = __webpack_require__(14);
 
 var _editor2 = _interopRequireDefault(_editor);
 
-var _emitter3 = __webpack_require__(8);
+var _emitter3 = __webpack_require__(7);
 
 var _emitter4 = _interopRequireDefault(_emitter3);
 
-var _module = __webpack_require__(9);
+var _module = __webpack_require__(8);
 
 var _module2 = _interopRequireDefault(_module);
 
@@ -997,7 +997,7 @@ var _extend = __webpack_require__(3);
 
 var _extend2 = _interopRequireDefault(_extend);
 
-var _logger = __webpack_require__(10);
+var _logger = __webpack_require__(9);
 
 var _logger2 = _interopRequireDefault(_logger);
 
@@ -1699,7 +1699,7 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
 
-var _text = __webpack_require__(7);
+var _text = __webpack_require__(11);
 
 var _text2 = _interopRequireDefault(_text);
 
@@ -1785,43 +1785,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _parchment = __webpack_require__(0);
-
-var _parchment2 = _interopRequireDefault(_parchment);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var TextBlot = function (_Parchment$Text) {
-  _inherits(TextBlot, _Parchment$Text);
-
-  function TextBlot() {
-    _classCallCheck(this, TextBlot);
-
-    return _possibleConstructorReturn(this, (TextBlot.__proto__ || Object.getPrototypeOf(TextBlot)).apply(this, arguments));
-  }
-
-  return TextBlot;
-}(_parchment2.default.Text);
-
-exports.default = TextBlot;
-
-/***/ }),
-/* 8 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -1830,7 +1793,7 @@ var _eventemitter = __webpack_require__(53);
 
 var _eventemitter2 = _interopRequireDefault(_eventemitter);
 
-var _logger = __webpack_require__(10);
+var _logger = __webpack_require__(9);
 
 var _logger2 = _interopRequireDefault(_logger);
 
@@ -1928,7 +1891,7 @@ Emitter.sources = {
 exports.default = Emitter;
 
 /***/ }),
-/* 9 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1954,7 +1917,7 @@ Module.DEFAULTS = {};
 exports.default = Module;
 
 /***/ }),
-/* 10 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1992,7 +1955,7 @@ debug.level = namespace.level = function (newLevel) {
 exports.default = namespace;
 
 /***/ }),
-/* 11 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var pSlice = Array.prototype.slice;
@@ -2092,6 +2055,43 @@ function objEquiv(a, b, opts) {
 
 
 /***/ }),
+/* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _parchment = __webpack_require__(0);
+
+var _parchment2 = _interopRequireDefault(_parchment);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var TextBlot = function (_Parchment$Text) {
+  _inherits(TextBlot, _Parchment$Text);
+
+  function TextBlot() {
+    _classCallCheck(this, TextBlot);
+
+    return _possibleConstructorReturn(this, (TextBlot.__proto__ || Object.getPrototypeOf(TextBlot)).apply(this, arguments));
+  }
+
+  return TextBlot;
+}(_parchment2.default.Text);
+
+exports.default = TextBlot;
+
+/***/ }),
 /* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -2179,7 +2179,7 @@ var _inline = __webpack_require__(6);
 
 var _inline2 = _interopRequireDefault(_inline);
 
-var _text = __webpack_require__(7);
+var _text = __webpack_require__(11);
 
 var _text2 = _interopRequireDefault(_text);
 
@@ -2396,7 +2396,7 @@ var _clone = __webpack_require__(18);
 
 var _clone2 = _interopRequireDefault(_clone);
 
-var _deepEqual = __webpack_require__(11);
+var _deepEqual = __webpack_require__(10);
 
 var _deepEqual2 = _interopRequireDefault(_deepEqual);
 
@@ -2739,15 +2739,15 @@ var _clone = __webpack_require__(18);
 
 var _clone2 = _interopRequireDefault(_clone);
 
-var _deepEqual = __webpack_require__(11);
+var _deepEqual = __webpack_require__(10);
 
 var _deepEqual2 = _interopRequireDefault(_deepEqual);
 
-var _emitter3 = __webpack_require__(8);
+var _emitter3 = __webpack_require__(7);
 
 var _emitter4 = _interopRequireDefault(_emitter3);
 
-var _logger = __webpack_require__(10);
+var _logger = __webpack_require__(9);
 
 var _logger2 = _interopRequireDefault(_logger);
 
@@ -3295,7 +3295,7 @@ var _parchment = __webpack_require__(0);
 
 var _parchment2 = _interopRequireDefault(_parchment);
 
-var _emitter = __webpack_require__(8);
+var _emitter = __webpack_require__(7);
 
 var _emitter2 = _interopRequireDefault(_emitter);
 
@@ -3788,7 +3788,7 @@ if (typeof module === 'object' && module.exports) {
 /* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var equal = __webpack_require__(11);
+var equal = __webpack_require__(10);
 var extend = __webpack_require__(3);
 
 
@@ -4370,7 +4370,7 @@ var _parchment = __webpack_require__(0);
 
 var _parchment2 = _interopRequireDefault(_parchment);
 
-var _text = __webpack_require__(7);
+var _text = __webpack_require__(11);
 
 var _text2 = _interopRequireDefault(_text);
 
@@ -4543,17 +4543,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
-
 var _parchment = __webpack_require__(0);
 
 var _parchment2 = _interopRequireDefault(_parchment);
-
-var _text = __webpack_require__(7);
-
-var _text2 = _interopRequireDefault(_text);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -4563,90 +4555,14 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var GUARD_TEXT = '\uFEFF';
-
 var Embed = function (_Parchment$Embed) {
   _inherits(Embed, _Parchment$Embed);
 
-  function Embed(node) {
+  function Embed() {
     _classCallCheck(this, Embed);
 
-    var _this = _possibleConstructorReturn(this, (Embed.__proto__ || Object.getPrototypeOf(Embed)).call(this, node));
-
-    _this.contentNode = document.createElement('span');
-    _this.contentNode.setAttribute('contenteditable', false);
-    [].slice.call(_this.domNode.childNodes).forEach(function (childNode) {
-      _this.contentNode.appendChild(childNode);
-    });
-    _this.leftGuard = document.createTextNode(GUARD_TEXT);
-    _this.rightGuard = document.createTextNode(GUARD_TEXT);
-    _this.domNode.appendChild(_this.leftGuard);
-    _this.domNode.appendChild(_this.contentNode);
-    _this.domNode.appendChild(_this.rightGuard);
-    return _this;
+    return _possibleConstructorReturn(this, (Embed.__proto__ || Object.getPrototypeOf(Embed)).apply(this, arguments));
   }
-
-  _createClass(Embed, [{
-    key: 'index',
-    value: function index(node, offset) {
-      if (node === this.leftGuard) return 0;
-      if (node === this.rightGuard) return 1;
-      return _get(Embed.prototype.__proto__ || Object.getPrototypeOf(Embed.prototype), 'index', this).call(this, node, offset);
-    }
-  }, {
-    key: 'restore',
-    value: function restore(node) {
-      var range = void 0,
-          textNode = void 0;
-      var text = node.data.split(GUARD_TEXT).join('');
-      if (node === this.leftGuard) {
-        if (this.prev instanceof _text2.default) {
-          var prevLength = this.prev.length();
-          this.prev.insertAt(prevLength, text);
-          range = {
-            startNode: this.prev.domNode,
-            startOffset: prevLength + text.length
-          };
-        } else {
-          textNode = document.createTextNode(text);
-          this.parent.insertBefore(_parchment2.default.create(textNode), this);
-          range = {
-            startNode: textNode,
-            startOffset: text.length
-          };
-        }
-      } else if (node === this.rightGuard) {
-        if (this.next instanceof _text2.default) {
-          this.next.insertAt(0, text);
-          range = {
-            startNode: this.next.domNode,
-            startOffset: text.length
-          };
-        } else {
-          textNode = document.createTextNode(text);
-          this.parent.insertBefore(_parchment2.default.create(textNode), this.next);
-          range = {
-            startNode: textNode,
-            startOffset: text.length
-          };
-        }
-      }
-      node.data = GUARD_TEXT;
-      return range;
-    }
-  }, {
-    key: 'update',
-    value: function update(mutations, context) {
-      var _this2 = this;
-
-      mutations.forEach(function (mutation) {
-        if (mutation.type === 'characterData' && (mutation.target === _this2.leftGuard || mutation.target === _this2.rightGuard)) {
-          var range = _this2.restore(mutation.target);
-          if (range) context.range = range;
-        }
-      });
-    }
-  }]);
 
   return Embed;
 }(_parchment2.default.Embed);
@@ -4761,7 +4677,7 @@ var _scroll = __webpack_require__(17);
 
 var _scroll2 = _interopRequireDefault(_scroll);
 
-var _text = __webpack_require__(7);
+var _text = __webpack_require__(11);
 
 var _text2 = _interopRequireDefault(_text);
 
@@ -4877,7 +4793,7 @@ var _clone = __webpack_require__(18);
 
 var _clone2 = _interopRequireDefault(_clone);
 
-var _deepEqual = __webpack_require__(11);
+var _deepEqual = __webpack_require__(10);
 
 var _deepEqual2 = _interopRequireDefault(_deepEqual);
 
@@ -4905,11 +4821,11 @@ var _quill = __webpack_require__(5);
 
 var _quill2 = _interopRequireDefault(_quill);
 
-var _logger = __webpack_require__(10);
+var _logger = __webpack_require__(9);
 
 var _logger2 = _interopRequireDefault(_logger);
 
-var _module = __webpack_require__(9);
+var _module = __webpack_require__(8);
 
 var _module2 = _interopRequireDefault(_module);
 
@@ -6012,7 +5928,7 @@ var _quill = __webpack_require__(5);
 
 var _quill2 = _interopRequireDefault(_quill);
 
-var _module = __webpack_require__(9);
+var _module = __webpack_require__(8);
 
 var _module2 = _interopRequireDefault(_module);
 
@@ -6265,11 +6181,11 @@ var _quill = __webpack_require__(5);
 
 var _quill2 = _interopRequireDefault(_quill);
 
-var _logger = __webpack_require__(10);
+var _logger = __webpack_require__(9);
 
 var _logger2 = _interopRequireDefault(_logger);
 
-var _module = __webpack_require__(9);
+var _module = __webpack_require__(8);
 
 var _module2 = _interopRequireDefault(_module);
 
