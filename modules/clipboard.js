@@ -120,6 +120,7 @@ class Clipboard extends Module {
     this.container.focus();
     this.quill.selection.update(Quill.sources.SILENT);
     setTimeout(() => {
+      this.quill.scrollingContainer.scrollTop = scrollTop;
       delta = delta.concat(this.convert()).delete(range.length);
       this.quill.updateContents(delta, Quill.sources.USER);
       // range.length contributes to delta.length()

@@ -6405,6 +6405,7 @@ var Clipboard = function (_Module) {
       this.container.focus();
       this.quill.selection.update(_quill2.default.sources.SILENT);
       setTimeout(function () {
+        _this2.quill.scrollingContainer.scrollTop = scrollTop;
         delta = delta.concat(_this2.convert()).delete(range.length);
         _this2.quill.updateContents(delta, _quill2.default.sources.USER);
         // range.length contributes to delta.length()
