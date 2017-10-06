@@ -4511,7 +4511,7 @@ var Cursor = function (_Parchment$Embed) {
         return mutation.type === 'characterData' && mutation.target === _this2.textNode;
       })) {
         var range = this.restore();
-        if (range) context.range = range;
+        if (range && context) context.range = range;
       }
     }
   }, {
