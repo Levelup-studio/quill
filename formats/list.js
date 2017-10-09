@@ -74,8 +74,7 @@ class List extends Container {
       }
     }
 
-    domNode.addEventListener('touchstart', listEventHandler);
-    domNode.addEventListener('mousedown', listEventHandler);
+    domNode.addEventListener('click', listEventHandler);
   }
 
   format(name, value) {
