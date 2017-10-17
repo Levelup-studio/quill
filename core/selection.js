@@ -194,9 +194,25 @@ class Selection {
         return index + blot.index(node, offset);
       }
     });
-    let end = Math.min(indexes[1], this.scroll.length() - 1);
-    let start = Math.min(indexes[0], ...indexes);
+    let end = Math.min(Math.max(...indexes), this.scroll.length() - 1);
+    let start = Math.min(end, ...indexes);
+    if (this.isInverted()) return new Range(start + end, 0 - (end - start));
     return new Range(start, end - start);
+  }
+
+  isInverted() {
+    var backwards = false;
+    if (window.getSelection) {
+        var sel = window.getSelection();
+        if (!sel.isCollapsed) {
+            var range = document.createRange();
+            range.setStart(sel.anchorNode, sel.anchorOffset);
+            range.setEnd(sel.focusNode, sel.focusOffset);
+            backwards = range.collapsed;
+            range.detach();
+        }
+    }
+    return backwards;
   }
 
   normalizeNative(nativeRange) {

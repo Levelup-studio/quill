@@ -3002,9 +3002,26 @@ var Selection = function () {
           return index + blot.index(node, offset);
         }
       });
-      var end = Math.min(indexes[1], this.scroll.length() - 1);
-      var start = Math.min.apply(Math, [indexes[0]].concat(_toConsumableArray(indexes)));
+      var end = Math.min(Math.max.apply(Math, _toConsumableArray(indexes)), this.scroll.length() - 1);
+      var start = Math.min.apply(Math, [end].concat(_toConsumableArray(indexes)));
+      if (this.isInverted()) return new Range(start + end, 0 - (end - start));
       return new Range(start, end - start);
+    }
+  }, {
+    key: 'isInverted',
+    value: function isInverted() {
+      var backwards = false;
+      if (window.getSelection) {
+        var sel = window.getSelection();
+        if (!sel.isCollapsed) {
+          var range = document.createRange();
+          range.setStart(sel.anchorNode, sel.anchorOffset);
+          range.setEnd(sel.focusNode, sel.focusOffset);
+          backwards = range.collapsed;
+          range.detach();
+        }
+      }
+      return backwards;
     }
   }, {
     key: 'normalizeNative',
