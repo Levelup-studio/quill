@@ -308,7 +308,7 @@ class Selection {
         range.setEnd(endNode, endOffset);
         selection.removeAllRanges();
         selection.addRange(range);
-        if (range.endOffset !== endOffset) {
+        if (range.endOffset !== endOffset || range.startOffset !== startOffset) {
           range = document.createRange();
           range.setStart(startNode, startOffset);
           range.setEnd(startNode, startOffset);
