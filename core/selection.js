@@ -194,9 +194,9 @@ class Selection {
         return index + blot.index(node, offset);
       }
     });
-    let end = Math.min(Math.max(...indexes), this.scroll.length() - 1);
-    let start = Math.min(end, ...indexes);
-    return new Range(start, end-start);
+    let end = Math.min(indexes[1], this.scroll.length() - 1);
+    let start = Math.min(indexes[0], ...indexes);
+    return new Range(start, end - start);
   }
 
   normalizeNative(nativeRange) {

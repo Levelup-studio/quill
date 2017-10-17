@@ -3002,8 +3002,8 @@ var Selection = function () {
           return index + blot.index(node, offset);
         }
       });
-      var end = Math.min(Math.max.apply(Math, _toConsumableArray(indexes)), this.scroll.length() - 1);
-      var start = Math.min.apply(Math, [end].concat(_toConsumableArray(indexes)));
+      var end = Math.min(indexes[1], this.scroll.length() - 1);
+      var start = Math.min.apply(Math, [indexes[0]].concat(_toConsumableArray(indexes)));
       return new Range(start, end - start);
     }
   }, {
