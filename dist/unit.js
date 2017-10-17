@@ -3139,6 +3139,8 @@ var Selection = function () {
           var range = document.createRange();
           range.setStart(startNode, startOffset);
           range.setEnd(endNode, endOffset);
+          selection.removeAllRanges();
+          selection.addRange(range);
           if (range.endOffset !== endOffset) {
             range = document.createRange();
             range.setStart(startNode, startOffset);
@@ -3147,9 +3149,6 @@ var Selection = function () {
             selection.addRange(range);
             var sel = window.getSelection();
             sel.extend(endNode, endOffset);
-          } else {
-            selection.removeAllRanges();
-            selection.addRange(range);
           }
         }
       } else {
