@@ -196,7 +196,7 @@ class Selection {
     });
     let end = Math.min(Math.max(...indexes), this.scroll.length() - 1);
     let start = Math.min(end, ...indexes);
-    if (this.isInverted()) return new Range(start + (0 - (end - start)), 0 - (end - start));
+    if (this.isInverted()) return new Range(start - (0 - (end - start)), 0 - (end - start));
     return new Range(start, end - start);
   }
 
