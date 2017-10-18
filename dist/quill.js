@@ -3004,7 +3004,7 @@ var Selection = function () {
       });
       var end = Math.min(Math.max.apply(Math, _toConsumableArray(indexes)), this.scroll.length() - 1);
       var start = Math.min.apply(Math, [end].concat(_toConsumableArray(indexes)));
-      if (this.isInverted()) return new Range(start + end, 0 - (end - start));
+      if (this.isInverted()) return new Range(start + (0 - (end - start)), 0 - (end - start));
       return new Range(start, end - start);
     }
   }, {
