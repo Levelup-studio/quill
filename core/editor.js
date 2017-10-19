@@ -1,267 +1,506 @@
+import './polyfill';
 import Delta from 'quill-delta';
-import DeltaOp from 'quill-delta/lib/op';
+import Editor from './editor';
+import Emitter from './emitter';
+import Module from './module';
 import Parchment from 'parchment';
-import CodeBlock from '../formats/code';
-import CursorBlot from '../blots/cursor';
-import Block, { bubbleFormats } from '../blots/block';
-import Break from '../blots/break';
-import clone from 'clone';
-import equal from 'deep-equal';
+import Selection, { Range } from './selection';
 import extend from 'extend';
+import logger from './logger';
+import Theme from './theme';
+
+let debug = logger('quill');
 
 
-const ASCII = /^[ -~]*$/;
-
-
-class Editor {
-  constructor(scroll) {
-    this.scroll = scroll;
-    this.delta = this.getDelta();
-  }
-
-  applyDelta(delta) {
-    let consumeNextNewline = false;
-    this.scroll.update();
-    let scrollLength = this.scroll.length();
-    this.scroll.batchStart();
-    delta = normalizeDelta(delta);
-    delta.reduce((index, op) => {
-      let length = op.retain || op.delete || op.insert.length || 1;
-      let attributes = op.attributes || {};
-      if (op.insert != null) {
-        if (typeof op.insert === 'string') {
-          let text = op.insert;
-          if (text.endsWith('\n') && consumeNextNewline) {
-            consumeNextNewline = false;
-            text = text.slice(0, -1);
-          }
-          if (index >= scrollLength && !text.endsWith('\n')) {
-            consumeNextNewline = true;
-          }
-          this.scroll.insertAt(index, text);
-          let [line, offset] = this.scroll.line(index);
-          let formats = extend({}, bubbleFormats(line));
-          if (line instanceof Block) {
-            let [leaf, ] = line.descendant(Parchment.Leaf, offset);
-            formats = extend(formats, bubbleFormats(leaf));
-          }
-          attributes = DeltaOp.attributes.diff(formats, attributes) || {};
-        } else if (typeof op.insert === 'object') {
-          let key = Object.keys(op.insert)[0];  // There should only be one key
-          if (key == null) return index;
-          this.scroll.insertAt(index, key, op.insert[key]);
-        }
-        scrollLength += length;
-      }
-      Object.keys(attributes).forEach((name) => {
-        this.scroll.formatAt(index, length, name, attributes[name]);
-      });
-      return index + length;
-    }, 0);
-    delta.reduce((index, op) => {
-      if (typeof op.delete === 'number') {
-        this.scroll.deleteAt(index, op.delete);
-        return index;
-      }
-      return index + (op.retain || op.insert.length || 1);
-    }, 0);
-    this.scroll.batchEnd();
-    return this.update(delta);
-  }
-
-  deleteText(index, length) {
-    this.scroll.deleteAt(index, length);
-    return this.update(new Delta().retain(index).delete(length));
-  }
-
-  formatLine(index, length, formats = {}) {
-    this.scroll.update();
-    Object.keys(formats).forEach((format) => {
-      if (this.scroll.whitelist != null && !this.scroll.whitelist[format]) return;
-      let lines = this.scroll.lines(index, Math.max(length, 1));
-      let lengthRemaining = length;
-      lines.forEach((line) => {
-        let lineLength = line.length();
-        if (!(line instanceof CodeBlock)) {
-          line.format(format, formats[format]);
-        } else {
-          let codeIndex = index - line.offset(this.scroll);
-          let codeLength = line.newlineIndex(codeIndex + lengthRemaining) - codeIndex + 1;
-          line.formatAt(codeIndex, codeLength, format, formats[format]);
-        }
-        lengthRemaining -= lineLength;
-      });
-    });
-    this.scroll.optimize();
-    return this.update(new Delta().retain(index).retain(length, clone(formats)));
-  }
-
-  formatText(index, length, formats = {}) {
-    Object.keys(formats).forEach((format) => {
-      this.scroll.formatAt(index, length, format, formats[format]);
-    });
-    return this.update(new Delta().retain(index).retain(length, clone(formats)));
-  }
-
-  getContents(index, length) {
-    return this.delta.slice(index, index + length);
-  }
-
-  getDelta() {
-    return this.scroll.lines().reduce((delta, line) => {
-      return delta.concat(line.delta());
-    }, new Delta());
-  }
-
-  getFormat(index, length = 0) {
-    let lines = [], leaves = [];
-    if (length === 0) {
-      this.scroll.path(index).forEach(function(path) {
-        let [blot, ] = path;
-        if (blot instanceof Block) {
-          lines.push(blot);
-        } else if (blot instanceof Parchment.Leaf) {
-          leaves.push(blot);
-        }
-      });
-    } else {
-      lines = this.scroll.lines(index, length);
-      leaves = this.scroll.descendants(Parchment.Leaf, index, length);
+class Quill {
+  static debug(limit) {
+    if (limit === true) {
+      limit = 'log';
     }
-    let formatsArr = [lines, leaves].map(function(blots) {
-      if (blots.length === 0) return {};
-      let formats = bubbleFormats(blots.shift());
-      while (Object.keys(formats).length > 0) {
-        let blot = blots.shift();
-        if (blot == null) return formats;
-        formats = combineFormats(bubbleFormats(blot), formats);
-      }
-      return formats;
-    });
-    return extend.apply(extend, formatsArr);
+    logger.level(limit);
   }
 
-  getText(index, length) {
-    return this.getContents(index, length).filter(function(op) {
-      return typeof op.insert === 'string';
-    }).map(function(op) {
-      return op.insert;
-    }).join('');
+  static find(node) {
+    return node.__quill || Parchment.find(node);
   }
 
-  insertEmbed(index, embed, value) {
-    this.scroll.insertAt(index, embed, value);
-    return this.update(new Delta().retain(index).insert({ [embed]: value }));
+  static import(name) {
+    if (this.imports[name] == null) {
+      debug.error(`Cannot import ${name}. Are you sure it was registered?`);
+    }
+    return this.imports[name];
   }
 
-  insertText(index, text, formats = {}) {
-    text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    this.scroll.insertAt(index, text);
-    Object.keys(formats).forEach((format) => {
-      this.scroll.formatAt(index, text.length, format, formats[format]);
-    });
-    return this.update(new Delta().retain(index).insert(text, clone(formats)));
-  }
-
-  isBlank() {
-    if (this.scroll.children.length == 0) return true;
-    if (this.scroll.children.length > 1) return false;
-    let block = this.scroll.children.head;
-    if (block.statics.blotName !== Block.blotName) return false;
-    if (block.children.length > 1) return false;
-    return block.children.head instanceof Break;
-  }
-
-  removeFormat(index, length) {
-    let text = this.getText(index, length);
-    let [line, offset] = this.scroll.line(index + length);
-    let suffixLength = 0, suffix = new Delta();
-    if (line != null) {
-      if (!(line instanceof CodeBlock)) {
-        suffixLength = line.length() - offset;
+  static register(path, target, overwrite = false) {
+    if (typeof path !== 'string') {
+      let name = path.attrName || path.blotName;
+      if (typeof name === 'string') {
+        // register(Blot | Attributor, overwrite)
+        this.register('formats/' + name, path, target);
       } else {
-        suffixLength = line.newlineIndex(offset) - offset + 1;
+        Object.keys(path).forEach((key) => {
+          this.register(key, path[key], target);
+        });
       }
-      suffix = line.delta().slice(offset, offset + suffixLength - 1).insert('\n');
+    } else {
+      if (this.imports[path] != null && !overwrite) {
+        debug.warn(`Overwriting ${path} with`, target);
+      }
+      this.imports[path] = target;
+      if ((path.startsWith('blots/') || path.startsWith('formats/')) &&
+          target.blotName !== 'abstract') {
+        Parchment.register(target);
+      } else if (path.startsWith('modules') && typeof target.register === 'function') {
+        target.register();
+      }
     }
-    let contents = this.getContents(index, length + suffixLength);
-    let diff = contents.diff(new Delta().insert(text).concat(suffix));
-    let delta = new Delta().retain(index).concat(diff);
-    return this.applyDelta(delta);
   }
 
-  update(change, mutations = [], cursorIndex = undefined) {
-    let oldDelta = this.delta;
-    if (mutations.length === 1 &&
-        mutations[0].type === 'characterData' &&
-        mutations[0].target.data.match(ASCII) &&
-        Parchment.find(mutations[0].target)) {
-      // Optimization for character changes
-      let textBlot = Parchment.find(mutations[0].target);
-      let formats = bubbleFormats(textBlot);
-      let index = textBlot.offset(this.scroll);
-      let oldValue = mutations[0].oldValue.replace(CursorBlot.CONTENTS, '');
-      let oldText = new Delta().insert(oldValue);
-      let newText = new Delta().insert(textBlot.value());
-      let diffDelta = new Delta().retain(index).concat(oldText.diff(newText, cursorIndex));
-      change = diffDelta.reduce(function(delta, op) {
-        if (op.insert) {
-          return delta.insert(op.insert, formats);
-        } else {
-          return delta.push(op);
-        }
-      }, new Delta());
-      this.delta = oldDelta.compose(change);
+  constructor(container, options = {}) {
+    this.options = expandConfig(container, options);
+    this.container = this.options.container;
+    if (this.container == null) {
+      return debug.error('Invalid Quill container', container);
+    }
+    if (this.options.debug) {
+      Quill.debug(this.options.debug);
+    }
+    let html = this.container.innerHTML.trim();
+    this.container.classList.add('ql-container');
+    this.container.innerHTML = '';
+    this.container.__quill = this;
+    this.root = this.addContainer('ql-editor');
+    this.root.classList.add('ql-blank');
+    this.root.setAttribute('data-gramm', false);
+    this.scrollingContainer = this.options.scrollingContainer || this.root;
+    this.emitter = new Emitter();
+    this.scroll = Parchment.create(this.root, {
+      emitter: this.emitter,
+      whitelist: this.options.formats
+    });
+    this.editor = new Editor(this.scroll);
+    this.selection = new Selection(this.scroll, this.emitter);
+    this.theme = new this.options.theme(this, this.options);
+    this.keyboard = this.theme.addModule('keyboard');
+    this.clipboard = this.theme.addModule('clipboard');
+    this.history = this.theme.addModule('history');
+    this.theme.init();
+    this.emitter.on(Emitter.events.EDITOR_CHANGE, (type) => {
+      if (type === Emitter.events.TEXT_CHANGE) {
+        this.root.classList.toggle('ql-blank', this.editor.isBlank());
+      }
+    });
+    this.emitter.on(Emitter.events.SCROLL_UPDATE, (source, mutations) => {
+      let range = this.selection.lastRange;
+      let index = range && range.length === 0 ? range.index : undefined;
+      modify.call(this, () => {
+        return this.editor.update(null, mutations, index);
+      }, source);
+    });
+    let contents = this.clipboard.convert(`<div class='ql-editor' style="white-space: normal;">${html}<p><br></p></div>`);
+    this.setContents(contents);
+    this.history.clear();
+    if (this.options.placeholder) {
+      this.root.setAttribute('data-placeholder', this.options.placeholder);
+    }
+    if (this.options.readOnly) {
+      this.disable();
+    }
+  }
+
+  addContainer(container, refNode = null) {
+    if (typeof container === 'string') {
+      let className = container;
+      container = document.createElement('div');
+      container.classList.add(className);
+    }
+    this.container.insertBefore(container, refNode);
+    return container;
+  }
+
+  blur() {
+    this.selection.setRange(null);
+  }
+
+  deleteText(index, length, source) {
+    [index, length, , source] = overload(index, length, source);
+    return modify.call(this, () => {
+      return this.editor.deleteText(index, length);
+    }, source, index, -1*length);
+  }
+
+  disable() {
+    this.enable(false);
+  }
+
+  enable(enabled = true) {
+    this.scroll.enable(enabled);
+    this.container.classList.toggle('ql-disabled', !enabled);
+  }
+
+  focus() {
+    let scrollTop = this.scrollingContainer.scrollTop;
+    this.selection.focus();
+    this.scrollingContainer.scrollTop = scrollTop;
+    this.scrollIntoView();
+  }
+
+  format(name, value, source = Emitter.sources.API) {
+    return modify.call(this, () => {
+      let range = this.getSelection(true);
+      let change = new Delta();
+      if (range == null) {
+        return change;
+      } else if (Parchment.query(name, Parchment.Scope.BLOCK)) {
+        change = this.editor.formatLine(range.index, range.length, { [name]: value });
+      } else if (range.length === 0) {
+        this.selection.format(name, value);
+        return change;
+      } else {
+        change = this.editor.formatText(range.index, range.length, { [name]: value });
+      }
+      this.setSelection(range, Emitter.sources.SILENT);
+      return change;
+    }, source);
+  }
+
+  formatLine(index, length, name, value, source) {
+    let formats;
+    [index, length, formats, source] = overload(index, length, name, value, source);
+    return modify.call(this, () => {
+      return this.editor.formatLine(index, length, formats);
+    }, source, index, 0);
+  }
+
+  formatText(index, length, name, value, source) {
+    let formats;
+    [index, length, formats, source] = overload(index, length, name, value, source);
+    return modify.call(this, () => {
+      return this.editor.formatText(index, length, formats);
+    }, source, index, 0);
+  }
+
+  getBounds(index, length = 0) {
+    let bounds;
+    if (typeof index === 'number') {
+      bounds = this.selection.getBounds(index, length);
     } else {
-      this.delta = this.getDelta();
-      if (!change || !equal(oldDelta.compose(change), this.delta)) {
-        change = oldDelta.diff(this.delta, cursorIndex);
+      bounds = this.selection.getBounds(index.index, index.length);
+    }
+    let containerBounds = this.container.getBoundingClientRect();
+    return {
+      bottom: bounds.bottom - containerBounds.top,
+      height: bounds.height,
+      left: bounds.left - containerBounds.left,
+      right: bounds.right - containerBounds.left,
+      top: bounds.top - containerBounds.top,
+      width: bounds.width
+    };
+  }
+
+  getContents(index = 0, length = this.getLength() - index) {
+    [index, length] = overload(index, length);
+    return this.editor.getContents(index, length);
+  }
+
+  getFormat(index = this.getSelection(true), length = 0) {
+    if (typeof index === 'number') {
+      return this.editor.getFormat(index, length);
+    } else {
+      return this.editor.getFormat(index.index, index.length);
+    }
+  }
+
+  getIndex(blot) {
+    return blot.offset(this.scroll);
+  }
+
+  getLength() {
+    return this.scroll.length();
+  }
+
+  getLeaf(index) {
+    return this.scroll.leaf(index);
+  }
+
+  getLine(index) {
+    return this.scroll.line(index);
+  }
+
+  getLines(index = 0, length = Number.MAX_VALUE) {
+    if (typeof index !== 'number') {
+      return this.scroll.lines(index.index, index.length);
+    } else {
+      return this.scroll.lines(index, length);
+    }
+  }
+
+  getModule(name) {
+    return this.theme.modules[name];
+  }
+
+  getSelection(focus = false) {
+    if (focus) this.focus();
+    this.update();  // Make sure we access getRange with editor in consistent state
+    return this.selection.getRange()[0];
+  }
+
+  getText(index = 0, length = this.getLength() - index) {
+    [index, length] = overload(index, length);
+    return this.editor.getText(index, length);
+  }
+
+  hasFocus() {
+    return this.selection.hasFocus();
+  }
+
+  insertEmbed(index, embed, value, source = Quill.sources.API) {
+    return modify.call(this, () => {
+      return this.editor.insertEmbed(index, embed, value);
+    }, source, index);
+  }
+
+  insertText(index, text, name, value, source) {
+    let formats;
+    [index, , formats, source] = overload(index, 0, name, value, source);
+    return modify.call(this, () => {
+      return this.editor.insertText(index, text, formats);
+    }, source, index, text.length);
+  }
+
+  isEnabled() {
+    return !this.container.classList.contains('ql-disabled');
+  }
+
+  off() {
+    return this.emitter.off.apply(this.emitter, arguments);
+  }
+
+  on() {
+    return this.emitter.on.apply(this.emitter, arguments);
+  }
+
+  once() {
+    return this.emitter.once.apply(this.emitter, arguments);
+  }
+
+  pasteHTML(index, html, source) {
+    this.clipboard.dangerouslyPasteHTML(index, html, source);
+  }
+
+  removeFormat(index, length, source) {
+    [index, length, , source] = overload(index, length, source);
+    return modify.call(this, () => {
+      return this.editor.removeFormat(index, length);
+    }, source, index);
+  }
+
+  scrollIntoView() {
+    this.selection.scrollIntoView(this.scrollingContainer);
+  }
+
+  setContents(delta, source = Emitter.sources.API) {
+    return modify.call(this, () => {
+      delta = new Delta(delta);
+      let length = this.getLength();
+      let deleted = this.editor.deleteText(0, length);
+      let applied = this.editor.applyDelta(delta);
+      let lastOp = applied.ops[applied.ops.length - 1];
+      if (lastOp != null && typeof(lastOp.insert) === 'string' && lastOp.insert[lastOp.insert.length-1] === '\n') {
+        this.editor.deleteText(this.getLength() - 1, 1);
+        applied.delete(1);
+      }
+      let ret = deleted.compose(applied);
+      return ret;
+    }, source);
+  }
+
+  setSelection(index, length, reversed = false, source) {
+    if (index == null) {
+      this.selection.setRange(null, length || Quill.sources.API);
+    } else {
+      [index, length, , source] = overload(index, length, source);
+      this.selection.setRange(new Range(index, length, reversed), source);
+      if (source !== Emitter.sources.SILENT) {
+        this.selection.scrollIntoView(this.scrollingContainer);
       }
     }
+  }
+
+  setText(text, source = Emitter.sources.API) {
+    let delta = new Delta().insert(text);
+    return this.setContents(delta, source);
+  }
+
+  update(source = Emitter.sources.USER) {
+    let change = this.scroll.update(source);   // Will update selection before selection.update() does if text changes
+    this.selection.update(source);
     return change;
   }
+
+  updateContents(delta, source = Emitter.sources.API) {
+    return modify.call(this, () => {
+      delta = new Delta(delta);
+      return this.editor.applyDelta(delta, source);
+    }, source, true);
+  }
 }
+Quill.DEFAULTS = {
+  bounds: null,
+  formats: null,
+  modules: {},
+  placeholder: '',
+  readOnly: false,
+  scrollingContainer: null,
+  strict: true,
+  theme: 'default'
+};
+Quill.events = Emitter.events;
+Quill.sources = Emitter.sources;
+// eslint-disable-next-line no-undef
+Quill.version = typeof(QUILL_VERSION) === 'undefined' ? 'dev' : QUILL_VERSION;
+
+Quill.imports = {
+  'delta'       : Delta,
+  'parchment'   : Parchment,
+  'core/module' : Module,
+  'core/theme'  : Theme
+};
 
 
-function combineFormats(formats, combined) {
-  return Object.keys(combined).reduce(function(merged, name) {
-    if (formats[name] == null) return merged;
-    if (combined[name] === formats[name]) {
-      merged[name] = combined[name];
-    } else if (Array.isArray(combined[name])) {
-      if (combined[name].indexOf(formats[name]) < 0) {
-        merged[name] = combined[name].concat([formats[name]]);
+function expandConfig(container, userConfig) {
+  userConfig = extend(true, {
+    container: container,
+    modules: {
+      clipboard: true,
+      keyboard: true,
+      history: true
+    }
+  }, userConfig);
+  if (!userConfig.theme || userConfig.theme === Quill.DEFAULTS.theme) {
+    userConfig.theme = Theme;
+  } else {
+    userConfig.theme = Quill.import(`themes/${userConfig.theme}`);
+    if (userConfig.theme == null) {
+      throw new Error(`Invalid theme ${userConfig.theme}. Did you register it?`);
+    }
+  }
+  let themeConfig = extend(true, {}, userConfig.theme.DEFAULTS);
+  [themeConfig, userConfig].forEach(function(config) {
+    config.modules = config.modules || {};
+    Object.keys(config.modules).forEach(function(module) {
+      if (config.modules[module] === true) {
+        config.modules[module] = {};
       }
+    });
+  });
+  let moduleNames = Object.keys(themeConfig.modules).concat(Object.keys(userConfig.modules));
+  let moduleConfig = moduleNames.reduce(function(config, name) {
+    let moduleClass = Quill.import(`modules/${name}`);
+    if (moduleClass == null) {
+      debug.error(`Cannot load ${name} module. Are you sure you registered it?`);
     } else {
-      merged[name] = [combined[name], formats[name]];
+      config[name] = moduleClass.DEFAULTS || {};
     }
-    return merged;
+    return config;
   }, {});
+  // Special case toolbar shorthand
+  if (userConfig.modules != null && userConfig.modules.toolbar &&
+      userConfig.modules.toolbar.constructor !== Object) {
+    userConfig.modules.toolbar = {
+      container: userConfig.modules.toolbar
+    };
+  }
+  userConfig = extend(true, {}, Quill.DEFAULTS, { modules: moduleConfig }, themeConfig, userConfig);
+  ['bounds', 'container', 'scrollingContainer'].forEach(function(key) {
+    if (typeof userConfig[key] === 'string') {
+      userConfig[key] = document.querySelector(userConfig[key]);
+    }
+  });
+  userConfig.modules = Object.keys(userConfig.modules).reduce(function(config, name) {
+    if (userConfig.modules[name]) {
+      config[name] = userConfig.modules[name];
+    }
+    return config;
+  }, {});
+  return userConfig;
 }
 
-function normalizeDelta(delta) {
-  return delta.reduce(function(delta, op) {
-    if (op.insert === 1) {
-      let attributes = clone(op.attributes);
-      delete attributes['image'];
-      return delta.insert({ image: op.attributes.image }, attributes);
+// Handle selection preservation and TEXT_CHANGE emission
+// common to modification APIs
+function modify(modifier, source, index, shift) {
+  if (this.options.strict && !this.isEnabled() && source === Emitter.sources.USER) {
+    return new Delta();
+  }
+  let range = index == null ? null : this.getSelection();
+  let oldDelta = this.editor.delta;
+  let change = modifier();
+  if (range != null) {
+    if (index === true) index = range.index;
+    if (shift == null) {
+      range = shiftRange(range, change, source);
+    } else if (shift !== 0) {
+      range = shiftRange(range, index, shift, source);
     }
-    if (op.attributes != null && (op.attributes.list === true || op.attributes.bullet === true)) {
-      op = clone(op);
-      if (op.attributes.list) {
-        op.attributes.list = 'ordered';
+    this.setSelection(range, Emitter.sources.SILENT);
+  }
+  if (change.length() > 0) {
+    let args = [Emitter.events.TEXT_CHANGE, change, oldDelta, source];
+    this.emitter.emit(Emitter.events.EDITOR_CHANGE, ...args);
+    if (source !== Emitter.sources.SILENT) {
+      this.emitter.emit(...args);
+    }
+  }
+  return change;
+}
+
+function overload(index, length, name, value, source) {
+  let formats = {};
+  if (typeof index.index === 'number' && typeof index.length === 'number') {
+    // Allow for throwaway end (used by insertText/insertEmbed)
+    if (typeof length !== 'number') {
+      source = value, value = name, name = length, length = index.length, index = index.index;
+    } else {
+      length = index.length, index = index.index;
+    }
+  } else if (typeof length !== 'number') {
+    source = value, value = name, name = length, length = 0;
+  }
+  // Handle format being object, two format name/value strings or excluded
+  if (typeof name === 'object') {
+    formats = name;
+    source = value;
+  } else if (typeof name === 'string') {
+    if (value != null) {
+      formats[name] = value;
+    } else {
+      source = name;
+    }
+  }
+  // Handle optional source
+  source = source || Emitter.sources.API;
+  return [index, length, formats, source];
+}
+
+function shiftRange(range, index, length, source) {
+  if (range == null) return null;
+  let start, end;
+  if (index instanceof Delta) {
+    [start, end] = [range.index, range.index + range.length].map(function(pos) {
+      return index.transformPosition(pos, source !== Emitter.sources.USER);
+    });
+  } else {
+    [start, end] = [range.index, range.index + range.length].map(function(pos) {
+      if (pos < index || (pos === index && source === Emitter.sources.USER)) return pos;
+      if (length >= 0) {
+        return pos + length;
       } else {
-        op.attributes.list = 'bullet';
-        delete op.attributes.bullet;
+        return Math.max(index, pos + length);
       }
-    }
-    if (typeof op.insert === 'string') {
-      let text = op.insert.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-      return delta.insert(text, op.attributes);
-    }
-    return delta.push(op);
-  }, new Delta());
+    });
+  }
+  return new Range(start, end - start);
 }
 
 
-export default Editor;
+export { expandConfig, overload, Quill as default };
